@@ -1,40 +1,46 @@
 #!/usr/bin/env python3
-"""Create a class to manage the Api auth"""
-
+"""Authentication module for the API.
+"""
 import os
-from flask import request
+import re
 from typing import List, TypeVar
+from flask import request
 
 
-class Auth():
-    """Manages the API Authentication"""
+class Auth:
+    """Authentication class.
+    """
     def require_auth(self, path: str, excluded_paths: List[str]) -> bool:
+        """Checks if a path requires authentication.
         """
-        Public method that requires auth
-        Return:
-            True if path in excluded_paths
-            False if not
-        """
-        if path is None or excluded_paths is None:
-            return True
-        nomal_path = path.rstrip('/')
-        for excluded_path in excluded_paths:
-            if nomal_path == excluded_path.rstrip('/'):
-                return False
+        if path is not None and excluded_paths is not None:
+            for exclusion_path in map(lambda x: x.strip(), excluded_paths):
+                pattern = ''
+                if exclusion_path[-1] == '*':
+                    pattern = '{}.*'.format(exclusion_path[0:-1])
+                elif exclusion_path[-1] == '/':
+                    pattern = '{}/*'.format(exclusion_path[0:-1])
+                else:
+                    pattern = '{}/*'.format(exclusion_path)
+                if re.match(pattern, path):
+                    return False
         return True
 
     def authorization_header(self, request=None) -> str:
-        """Public method for authorization header"""
+        """Gets the authorization header field from the request.
+        """
         if request is not None:
             return request.headers.get('Authorization', None)
         return None
 
     def current_user(self, request=None) -> TypeVar('User'):
-        """Current user"""
+        """Gets the current user from the request.
+        """
         return None
 
-    def session_cookie(self, request=None):
-        """This method returns a cookie value from a request"""
+    def session_cookie(self, request=None) -> str:
+        """Gets the value of the cookie named SESSION_NAME.
+        """
         if request is not None:
             cookie_name = os.getenv('SESSION_NAME')
             return request.cookies.get(cookie_name)
